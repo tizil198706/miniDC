@@ -5,3 +5,103 @@
          - name: Ajustando o Timezone do servidor
            timezone:
                  name: America/Sao_Paulo
+
+
+
+- hosts: controllers
+  remote_user: vagrant
+  become: yes
+  tasks:
+        - name: Criando o Arquivo Info
+          lineinfile:
+                path: /tmp/info
+                line: SERVIDOR ANSIBLE CONTROLLER
+                create: yes
+
+- hosts: databases
+  remote_user: vagrant
+  become: yes
+  tasks:                 
+        - name: Definindo a Senha de Administrador do MySQL
+          debconf: name='mysql-server' question='mysql-server/root_password' value='123' vtype='password'
+
+        - name: Confirmando a Senha de Administrador do MySQL
+          debconf: name='mysql-server' question='mysql-server/root_password_again' value='123' vtype='password'
+   
+
+
+        - name: Install MySQL
+          apt:
+              state: present
+              update_cache: yes
+              pkg:
+                  - mysql-server
+                  - python-pymysql
+
+        - name: Criando a Base de Dados
+          mysql_db:
+              name: wordpress
+              state: present
+              login_user: root
+              login_password: 123
+
+        - name: Criando o usuário do Banco
+          mysql_user:
+              name: wordpress
+              password: impacta
+              priv: '*.*:ALL'
+              state: present
+              host: 172.17.177.21
+              login_user: root
+              login_password: 123
+
+        - name: Liberando o MySQL para Conexões Remotas
+          lineinfile:
+             path: /etc/mysql/mysql.conf.d/mysqld.cnf
+             regexp: '^bind-address'
+             line: bind-address  =  0.0.0.0
+          notify:
+             - restart mysql
+
+  handlers:
+     - name: restart apache
+       service:
+         name: apache2
+         state: restarted
+
+     - name: restart mysql
+       service:
+         name: mysql
+         state: restarted
+
+#INSTALANDO E CONFIGURANDO A MAQUINA BLOG 
+- hosts: webservers
+  remote_user: vagrant
+  become: yes
+  tasks:
+        - name: Criando o Arquivo Info
+          lineinfile:
+                path: /tmp/info
+                line: SERVIDOR DO BLOG WORDPRESS
+                create: yes
+               
+        - name: Instalando Apache e PHP Blog
+          apt: 
+                update_cache: yes
+                state: present
+                pkg: 
+                   - apache2
+                   - php-curl
+                   - php-gd
+                   - php-mbstring
+                   - php-xml
+                   - php-xmlrpc
+                   - php-soap
+                   - php-intl
+                   - php-zip
+                   - php
+                   - libapache2-mod-php
+                   - php-mysql
+                   - php-cli
+                   - mysql-server
+
