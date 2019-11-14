@@ -6,7 +6,6 @@
            timezone:
                  name: America/Sao_Paulo
 
-                 #controol
 
 - hosts: controllers
   remote_user: vagrant
